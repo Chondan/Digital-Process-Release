@@ -1,0 +1,188 @@
+Sub CheckErrorApprove(Form As UserForm)
+Dim ws As Worksheet
+Dim databasefile As String
+Set ws = ThisWorkbook.Sheets("Database")
+databasefile = ws.Range("B2").Value
+
+Dim cnn As New ADODB.Connection
+Dim rst As New ADODB.Recordset
+
+cnn.Open "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & databasefile
+
+Dim testname As String
+Dim count As Integer
+count = Form.ListBoxItemList.ListCount
+
+
+Dim nemeric As Integer
+Dim category As String
+
+Dim DataType As String
+Dim UB As Double
+Dim LB As Double
+Dim Unit As String
+
+Dim KSStation As String
+
+Dim categoryname()
+ReDim categoryname(count - 1)
+
+Dim result()
+ReDim result(count - 1)
+Dim check As Integer
+check = 0
+
+Dim checkcat As Integer
+checkcat = 0
+
+For i = 0 To count - 1
+    testname = Form.ListBoxItemList.List(i, 1)
+    DataType = Form.ListBoxItemList.List(i, 4)
+    KSStation = Form.ListBoxItemList.List(i, 0)
+    
+    
+    qry = "SELECT TestList.Test_ID, TestList.Station_ID, TestList.Test_Name, TestList.InspectionTest_ID, InspectionTest.Data_type, InspectionTest.Test_LowerBound, InspectionTest.Test_UpperBound, InspectionTest.Test_Unit" & _
+    " FROM InspectionTest INNER JOIN TestList ON InspectionTest.InspectionTest_ID = TestList.InspectionTest_ID WHERE (((TestList.Station_ID)='" & KSStation & "') AND ((TestList.Test_Name)='" & testname & "'));"
+    rst.Open qry, cnn, adOpenKeyset, adLockOptimistic
+    
+    
+    If DataType = "Numerical" Then
+        numeric = Form.ListBoxItemList.List(i, 2)
+        
+        LB = rst.Fields(5).Value
+        UB = rst.Fields(6).Value
+        If IsNumeric(numeric) Then
+            If numeric >= LB And numeric <= UB Then
+                'nothing
+            Else
+                check = check + 1
+                result(check - 1) = testname
+            End If
+        End If
+    ElseIf DataType = "Category" Then
+        category = Form.ListBoxItemList.List(i, 2)
+        Unit = rst.Fields(7).Value
+        
+        WordsList = Split(Unit, ",")
+        
+        Dim resultcat()
+        'count = (UBound(wordslist) * 2) - 1
+        count = UBound(WordsList)
+        If count > 0 Then
+            ReDim resultcat(count)
+            j = 0
+            For y = 0 To count
+                If j = y Then
+                    resultcat(j) = WordsList(y)
+                    j = j + 1
+                End If
+            Next y
+        End If
+       
+        Dim check2  As Integer
+        check2 = 0
+       
+        For x = 0 To count
+            If category <> resultcat(x) And category <> "" Then
+                check2 = check2 + 1
+                
+            End If
+    
+        Next x
+                
+        If check2 = count + 1 Then
+            checkcat = checkcat + 1
+            categoryname(checkcat - 1) = testname
+        End If
+        
+        
+        
+    End If
+    Set rst = Nothing
+Next i
+
+Dim program()
+Dim checkprogram As Integer
+count = Form.ListBoxItemList.ListCount
+ReDim program(count - 1)
+For i = 0 To count - 1
+    
+    
+    KSStation = Form.ListBoxItemList.List(i, 0)
+    testname = Form.ListBoxItemList.List(i, 1)
+    
+    If Form.LabellineID = 1 Then
+        Dim LineForm As UserForm
+        Set LineForm = Line1
+    ElseIf Form.LabellineID = 2 Then
+    
+        Set LineForm = Line2
+    End If
+    
+    qry = "SELECT ProductionProgram.[ID], ProductionProgram.[Station_ID], ProductionProgram.[Production program], ProductionProgram.[ProductType_ID], ProductModel.Product_Model " & _
+    "FROM (ProductType INNER JOIN ProductModel ON ProductType.ProductType_ID = ProductModel.ProductType_ID) INNER JOIN ProductionProgram ON ProductType.ProductType_ID = ProductionProgram.ProductType_ID " & _
+    "WHERE (((ProductionProgram.[Station_ID])='" & KSStation & "') AND ((ProductModel.Product_Model)='" & LineForm.ComboBoxProductModel.Value & "'));"
+
+    If KSStation = "KS207" Or KSStation = "KS107" Then
+
+        qry = "SELECT ProductionProgram.[ID], ProductionProgram.[Station_ID], ProductionProgram.[Production program], ProductionProgram.[ProductType_ID], ProductModel.Product_Model " & _
+        "FROM (ProductType INNER JOIN ProductModel ON ProductType.ProductType_ID = ProductModel.ProductType_ID) INNER JOIN ProductionProgram ON ProductType.ProductType_ID = ProductionProgram.ProductType_ID " & _
+        "WHERE (((ProductionProgram.[Station_ID])='" & KSStation & "') AND ((ProductModel.Product_Model)='" & LineForm.ComboBoxProductModel.Value & "') AND ((ProductionProgram.[Production program])='" & Left(LineForm.ComboBoxProductModel.Value, 10) & "'));"
+        'MsgBox (qry)
+    End If
+    rst.Open qry, cnn, adOpenKeyset, adLockOptimistic
+    If rst.RecordCount <> 0 Then
+    If KSStation = "KS207" Or KSStation = "KS107" Then
+        If Right(rst.Fields(2).Value, 3) <> Form.ListBoxItemList.List(i, 2) Then
+            checkprogram = checkprogram + 1
+            program(checkprogram - 1) = testname & " " & KSStation
+            
+            
+        
+        End If
+    Else
+        If rst.Fields(2).Value <> Form.ListBoxItemList.List(i, 2) Then
+            checkprogram = checkprogram + 1
+            program(checkprogram - 1) = testname & " " & KSStation
+            
+        
+        End If
+    End If
+    End If
+    Set rst = Nothing
+        
+Next i
+
+
+
+Dim answer As Integer
+Dim warning As String
+Dim aware As String
+Dim checkingprogram As String
+
+
+If check <> 0 Or checkcat <> 0 Or checkprogram <> 0 Then
+    For x = 0 To check - 1
+        If result(x) <> "" Then
+            warning = warning & result(x) & " is out of spec" & vbNewLine
+        End If
+    Next x
+    For Z = 0 To checkcat - 1
+        aware = aware & categoryname(Z) & " is not correct" & vbNewLine
+    Next Z
+    For a = 0 To checkprogram - 1
+        checkingprogram = checkingprogram & program(a) & " is not correct" & vbNewLine
+        'MsgBox (program(a))
+    Next a
+    'answer = MsgBox("Do you want to continue?" & vbNewLine & warning & aware, vbYesNo + vbQuestion, "Some record out of spec")
+    MsgBox ("There is something wrong" & vbNewLine & warning & aware & checkingprogram)
+
+Else
+
+End If
+
+cnn.Close
+Set cnn = Nothing
+Set rst = Nothing
+
+End Sub

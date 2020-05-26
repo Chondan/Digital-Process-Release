@@ -1,0 +1,118 @@
+'--------------------- SEND EMAIL
+
+Dim OA As Object
+Dim msg As Object
+
+Set OA = CreateObject("Outlook.Application")
+
+
+Dim Edit_row As Integer
+Edit_row = TextBoxRowNumber.Value
+
+Set msg = OA.createitem(0)
+
+
+
+
+msg.To = Home.TextBoxEmail.Value
+msg.cc = "fixed-term.Chondan.Susuwan@th.bosch.com"
+msg.Subject = "There is a new process release recorded No." & ws2.Range("A" & Edit_row)
+
+If ws2.Range("E" & Edit_row).Value = "Changeover" Then
+     msg.HTMLBody = "Release date : " & ws2.Range("B" & Edit_row).Value & vbNewLine & "<html><br/>" & _
+                            "Product Model : " & ws2.Range("C" & Edit_row).Value & " (Line1)" & vbNewLine & "<html><br/>" & _
+                            "Category : " & ws2.Range("E" & Edit_row).Value & " from model " & ws2.Range("F" & Edit_row).Value & " to model " & ws2.Range("G" & Edit_row).Value & vbNewLine & vbNewLine & "<html><br/>" & "<html><br/>" & _
+                            "Comment : " & "<html><br/>" & vbNewLine & ws2.Range("EC" & Edit_row).Value & vbNewLine & vbNewLine & "<html><br/>" & "<html><br/>" & _
+                            "Issue :" & ws2.Range("ED" & Edit_row).Value & "<html><br/>" & "<html><br/>" & _
+                            "<html><p>Summary of process release</p>" & crimping_depth_1 _
+                            & crimping_depth_2 & crimping_depth_3 & "<html><br/>" _
+                            & PullOffTest_1 & PullOffTest_2 & PullOffTest_3
+Else
+     msg.HTMLBody = "Release date : " & ws2.Range("B" & Edit_row).Value & vbNewLine & "<html><br/>" & _
+                            "Product Model : " & ws2.Range("C" & Edit_row).Value & " (Line1)" & vbNewLine & "<html><br/>" & _
+                            "Category : " & ws2.Range("E" & Edit_row).Value & vbNewLine & vbNewLine & "<html><br/>" & "<html><br/>" & _
+                            "Comment : " & "<html><br/>" & vbNewLine & ws2.Range("EC" & Edit_row).Value & vbNewLine & vbNewLine & "<html><br/>" & "<html><br/>" & _
+                            "Issue :" & ws2.Range("ED" & Edit_row).Value & "<html><br/>" & "<html><br/>" & _
+                            "<html><p>Summary of process release</p>" & crimping_depth_1 _
+                            & crimping_depth_2 & crimping_depth_3 & "<html><br/>" _
+                            & PullOffTest_1 & PullOffTest_2 & PullOffTest_3
+End If
+
+
+
+msg.Display
+'msg.send
+
+'--------------------------------------
+
+Public secretcode As String
+
+Public Sub CommandButton1_Click()
+Dim ws As Worksheet
+Set ws = ThisWorkbook.Sheets("English")
+
+Dim row As Integer
+row = ws.Range("A3", ws.Range("A3").End(xlDown)).Rows.Count
+'MsgBox (row)
+Dim x As Integer
+x = row + 3
+
+'ws.Range("A" & x).Value = Me.TextBox1.Value
+'Me.TextBox1.Value = ""
+Me.TextBox1.SetFocus
+'Dim secretcode As String
+Dim rdnumber1, rdnumber2, rdnumber3, rdnumber4, rdnumber5, rdnumber6 As Integer
+'rdnumber1 = 0
+'rdnumber2 = 0
+'rdnumber3 = 0
+'rdnumber4 = 0
+'rdnumber5 = 0
+'rdnumber6 = 0
+rdnumber1 = Int((1 + 9) * Rnd + 0)
+rdnumber2 = Int((1 + 9) * Rnd + 0)
+rdnumber3 = Int((1 + 9) * Rnd + 0)
+rdnumber4 = Int((1 + 9) * Rnd + 0)
+rdnumber5 = Int((1 + 9) * Rnd + 0)
+rdnumber6 = Int((1 + 9) * Rnd + 0)
+secretcode = CStr(rdnumber1) & CStr(rdnumber2) & CStr(rdnumber3) & _
+                            CStr(rdnumber4) & CStr(rdnumber5) & CStr(rdnumber6)
+
+'ws.Range("B" & x).Value = secretcode
+'--------------------
+Dim OA As Object
+Dim msg As Object
+
+Set OA = CreateObject("Outlook.Application")
+Set msg = OA.createitem(0)
+
+msg.To = "stampcs7@gmail.com"
+msg.cc = "stampcs7@outlook.com"
+msg.Subject = "Please check you security password"
+msg.Body = secretcode
+
+
+'msg.display
+msg.deleteaftersubmit = True
+msg.send
+
+'-------------------
+
+
+
+
+UserForm2.Show
+UserForm2.TextBox1.SetFocus
+'MsgBox (UserForm2.prove)
+If UserForm2.prove = "Checked" Then
+    ws.Range("A" & x).Value = Me.TextBox1.Value
+    Me.TextBox1.Value = ""
+    UserForm2.prove = ""
+    secretcode = ""
+Else
+    ws.Range("A" & x).Value = "Error"
+    Me.TextBox1.Value = ""
+    UserForm2.prove = ""
+    secretcode = ""
+End If
+
+End Sub
